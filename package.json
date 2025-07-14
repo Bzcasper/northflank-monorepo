@@ -12,7 +12,7 @@
     "rollback": "node scripts/rollback.js"
   },
   "dependencies": {
-    "@northflank/cli": "^latest",
+    "@northflank/cli": "^0.10.4",
     "dotenv": "^16.0.0",
     "axios": "^1.0.0"
   },

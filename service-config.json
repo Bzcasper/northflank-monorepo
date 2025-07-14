@@ -1,0 +1,43 @@
+{
+  "name": "shirt-video-maker",
+  "billing": {
+    "deploymentPlan": "nf-compute-10"
+  },
+  "deployment": {
+    "instances": 1,
+    "storage": {
+      "ssd": 1024,
+      "hdd": 0
+    },
+    "docker": {
+      "configType": "default"
+    }
+  },
+  "buildSettings": {
+    "dockerfile": {
+      "buildEngine": "kaniko",
+      "dockerFilePath": "/main.Dockerfile",
+      "dockerWorkDir": "/"
+    }
+  },
+  "vcsData": {
+    "projectUrl": "https://github.com/Bzcasper/short-video-maker",
+    "projectType": "github",
+    "projectBranch": "main"
+  },
+  "runtimeEnvironment": {
+    "LOG_LEVEL": "debug",
+    "PEXELS_API_KEY": "OH8xB8OLyfRqn68w9s4CoS8uUYD8CIV8JJmGiFYzDYXkIJnH3lLOwXu3",
+    "VIDEO_CACHE_SIZE_IN_BYTES": "536870912",
+    "DEV": "false"
+  },
+  "ports": [
+    {
+      "name": "app",
+      "internalPort": 3123,
+      "public": true,
+      "protocol": "HTTP",
+      "domains": []
+    }
+  ]
+}
