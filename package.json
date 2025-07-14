@@ -1,0 +1,22 @@
+{
+  "name": "northflank-deployment",
+  "version": "1.0.0",
+  "description": "Northflank deployment automation for shirt-video-maker",
+  "scripts": {
+    "deploy": "node scripts/deploy.js",
+    "deploy:dev": "NODE_ENV=development node scripts/deploy.js",
+    "deploy:prod": "NODE_ENV=production node scripts/deploy.js",
+    "status": "northflank get service shirt-video-maker --project n8n-shirtvideo-mcp",
+    "logs": "northflank logs service shirt-video-maker --project n8n-shirtvideo-mcp --follow",
+    "scale": "node scripts/scale.js",
+    "rollback": "node scripts/rollback.js"
+  },
+  "dependencies": {
+    "@northflank/cli": "^latest",
+    "dotenv": "^16.0.0",
+    "axios": "^1.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.0"
+  }
+}
