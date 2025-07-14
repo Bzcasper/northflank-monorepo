@@ -1,12 +1,12 @@
 {
   "name": "shirt-video-maker",
   "billing": {
-    "deploymentPlan": "nf-compute-10"
+    "deploymentPlan": "nf-compute-200-4"
   },
   "deployment": {
     "instances": 1,
     "storage": {
-      "ssd": 1024,
+      "ssd": 5120,
       "hdd": 0
     },
     "docker": {
@@ -28,7 +28,9 @@
   "runtimeEnvironment": {
     "LOG_LEVEL": "debug",
     "PEXELS_API_KEY": "OH8xB8OLyfRqn68w9s4CoS8uUYD8CIV8JJmGiFYzDYXkIJnH3lLOwXu3",
-    "VIDEO_CACHE_SIZE_IN_BYTES": "536870912",
+    "VIDEO_CACHE_SIZE_IN_BYTES": "4294967296",
+    "CONCURRENCY": "2",
+    "KOKORO_MODEL_PRECISION": "fp16",
     "DEV": "false"
   },
   "ports": [

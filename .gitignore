@@ -1,8 +1,25 @@
-# Environment files
+# Environment files - NEVER COMMIT CREDENTIALS
 .env
 .env.local
 .env.production
 .env.development
+.env.*
+
+# API Keys and Tokens
+**/api-keys.txt
+**/tokens.txt
+**/*token*
+**/*key*
+**/*secret*
+**/*credential*
+
+# Northflank specific credentials
+.northflank/
+northflank-context.json
+**/northflank-token*
+
+# Service configuration with embedded secrets
+service-config-with-secrets.json
 
 # Node.js dependencies
 node_modules/
