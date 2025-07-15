@@ -14,6 +14,6 @@ northflank create service combined \
   --cpu 4000 \
   --memory 16384 \
   --env LOG_LEVEL=debug \
-  --env PEXELS_API_KEY=your_pexels_key \
+  --env PEXELS_API_KEY=OH8xB8OLyfRqn68w9s4CoS8uUYD8CIV8JJmGiFYzDYXkIJnH3lLOwXu3 \
   --env VIDEO_CACHE_SIZE_IN_BYTES=2097152000 \
   --env DEV=false

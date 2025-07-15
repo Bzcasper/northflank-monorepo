@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
 const { execSync } = require('child_process');
-const fs = require('fs');
 require('dotenv').config();
 
 const config = {
@@ -37,7 +36,7 @@ function deployService() {
     execSync(`northflank get service ${config.serviceName} --project ${config.projectName}`, { stdio: 'pipe' });
     console.log('📝 Service exists, updating...');
     updateService();
-  } catch (error) {
+  } catch {
     console.log('🆕 Service not found, creating new...');
     createService();
   }

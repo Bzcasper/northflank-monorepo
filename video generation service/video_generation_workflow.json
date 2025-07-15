@@ -1,0 +1,112 @@
+
+{
+  "nodes": [
+    {
+      "name": "Start",
+      "type": "n8n-nodes-base.start",
+      "position": [100, 200]
+    },
+    {
+      "name": "Generate Music",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [300, 200],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.suno.ai/v1/generate",
+        "authentication": "customApiKey",
+        "options": {
+          "body": {
+            "prompt": "an upbeat city vibe",
+            "duration": 30
+          }
+        }
+      }
+    },
+    {
+      "name": "Wait for Music",
+      "type": "n8n-nodes-base.wait",
+      "position": [500, 200],
+      "parameters": {
+        "time": "untilField",
+        "fieldName": "music_ready"
+      }
+    },
+    {
+      "name": "Generate Visuals",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [700, 200],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.stablediffusion.com/v1/generate",
+        "options": {
+          "body": {
+            "prompt": "an upbeat city vibe",
+            "type": "image"
+          }
+        }
+      }
+    },
+    {
+      "name": "Generate Lyrics",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [900, 200],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.vercel-ai.com/v1/text",
+        "options": {
+          "body": {
+            "prompt": "Write lyrics for an upbeat city vibe song"
+          }
+        }
+      }
+    },
+    {
+      "name": "Render Video",
+      "type": "n8n-nodes-base.executeCommand",
+      "position": [1100, 200],
+      "parameters": {
+        "command": "npx remotion render PortraitVideo out/video.mp4 --props='{\"music\": \"{{ $node[\"Generate Music\"].json[\"music_url\"] }}\", \"visuals\": \"{{ $node[\"Generate Visuals\"].json[\"image_url\"] }}\", \"lyrics\": \"{{ $node[\"Generate Lyrics\"].json[\"text\"] }}\"}'"
+      }
+    },
+    {
+      "name": "Enhance Video",
+      "type": "n8n-nodes-base.executeCommand",
+      "position": [1300, 200],
+      "parameters": {
+        "command": "ffmpeg -i out/video.mp4 -vf 'drawtext=text=MyVideo:fontsize=20' out/final-video.mp4"
+      }
+    },
+    {
+      "name": "Upload Video",
+      "type": "n8n-nodes-base.googleDrive",
+      "position": [1500, 200],
+      "parameters": {
+        "operation": "upload",
+        "filePath": "out/final-video.mp4"
+      }
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [{ "node": "Generate Music", "type": "main", "index": 0 }]
+    },
+    "Generate Music": {
+      "main": [{ "node": "Wait for Music", "type": "main", "index": 0 }]
+    },
+    "Wait for Music": {
+      "main": [{ "node": "Generate Visuals", "type": "main", "index": 0 }]
+    },
+    "Generate Visuals": {
+      "main": [{ "node": "Generate Lyrics", "type": "main", "index": 0 }]
+    },
+    "Generate Lyrics": {
+      "main": [{ "node": "Render Video", "type": "main", "index": 0 }]
+    },
+    "Render Video": {
+      "main": [{ "node": "Enhance Video", "type": "main", "index": 0 }]
+    },
+    "Enhance Video": {
+      "main": [{ "node": "Upload Video", "type": "main", "index": 0 }]
+    }
+  }
+}

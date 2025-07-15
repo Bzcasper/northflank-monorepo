@@ -1,0 +1,325 @@
+{
+  "name": "Suno Video Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "suno-video",
+        "responseMode": "onReceived"
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "apiKey",
+              "value": "{{$env.SUNO_API_KEY}}"
+            },
+            {
+              "name": "cloudflareApiKey",
+              "value": "{{$env.CLOUDFLARE_API_KEY}}"
+            },
+            {
+              "name": "vercelApiKey",
+              "value": "{{$env.VERCEL_API_KEY}}"
+            },
+            {
+              "name": "script",
+              "value": "{{$json.body.script}}"
+            },
+            {
+              "name": "mood",
+              "value": "{{$json.body.mood || 'happy'}}"
+            },
+            {
+              "name": "language",
+              "value": "{{$json.body.language || 'en'}}"
+            },
+            {
+              "name": "orientation",
+              "value": "{{$json.body.orientation || 'portrait'}}"
+            }
+          ]
+        }
+      },
+      "name": "Set Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "https://api.suno.ai/v1/music",
+        "jsonParameters": true,
+        "options": {
+          "headers": {
+            "Authorization": "Bearer {{$node['Set Config'].json['apiKey']}}"
+          }
+        },
+        "bodyParametersJson": "{\"prompt\": \"upbeat {{$node['Set Config'].json['mood']}} music for {{$node['Set Config'].json['script']}}, 30 seconds\", \"duration\": 30}"
+      },
+      "name": "Generate Music",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "duration": 60,
+        "unit": "seconds"
+      },
+      "name": "Wait for Music",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "requestMethod": "GET",
+        "url": "{{$node['Generate Music'].json['musicUrl']}}",
+        "options": {
+          "responseFormat": "file",
+          "output": "/tmp/suno_music/{{$node['Generate Music'].json['id']}}.mp3"
+        }
+      },
+      "name": "Download Music",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "https://api.cloudflare.com/client/v4/accounts/{{$env.CLOUDFLARE_ACCOUNT_ID}}/ai/run/stable-diffusion",
+        "jsonParameters": true,
+        "options": {
+          "headers": {
+            "Authorization": "Bearer {{$node['Set Config'].json['cloudflareApiKey']}}"
+          }
+        },
+        "bodyParametersJson": "{\"prompt\": \"jewelry-themed visual for {{$node['Set Config'].json['script']}}, {{$node['Set Config'].json['mood']}} mood\", \"num_steps\": 20}"
+      },
+      "name": "Generate Visual",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [680, 500]
+    },
+    {
+      "parameters": {
+        "requestMethod": "GET",
+        "url": "{{$node['Generate Visual'].json['imageUrl']}}",
+        "options": {
+          "responseFormat": "file",
+          "output": "/tmp/visuals/{{$node['Generate Visual'].json['id']}}.jpg"
+        }
+      },
+      "name": "Download Visual",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [900, 500]
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "{{$env.VERCEL_API_URL}}/generate-lyrics",
+        "jsonParameters": true,
+        "options": {
+          "headers": {
+            "Authorization": "Bearer {{$node['Set Config'].json['vercelApiKey']}}"
+          }
+        },
+        "bodyParametersJson": "{\"prompt\": \"Generate lyrics for {{$node['Set Config'].json['script']}} in {{$node['Set Config'].json['mood']}} mood, language: {{$node['Set Config'].json['language']}}\"}"
+      },
+      "name": "Generate Lyrics",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [680, 700]
+    },
+    {
+      "parameters": {
+        "command": "npx remotion render src/components/root/Root.tsx {{$node['Set Config'].json['orientation']}} /tmp/output/{{$node['Generate Music'].json['id']}}.mp4 --props='{\"musicPath\": \"/tmp/suno_music/{{$node['Generate Music'].json['id']}}.mp3\", \"visualPath\": \"/tmp/visuals/{{$node['Generate Visual'].json['id']}}.jpg\", \"lyrics\": {{$node['Generate Lyrics'].json['lyrics']}}, \"language\": {{$node['Set Config'].json['language']}}, \"captionFontSize\": 24, \"captionColor\": \"#ffffff\"}'"
+      },
+      "name": "Render Video",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "command": "ffmpeg -i /tmp/output/{{$node['Generate Music'].json['id']}}.mp4 -vf \"drawtext=text='Your Jewelry Store':fontcolor=white:fontsize=24:box=1:boxcolor=black@0.5:boxborderw=5:x=(w-text_w)/2:y=20\" -c:a copy /tmp/output/{{$node['Generate Music'].json['id']}}_watermarked.mp4"
+      },
+      "name": "Add Watermark",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [1560, 300]
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "https://api.cloudflare.com/client/v4/accounts/{{$env.CLOUDFLARE_ACCOUNT_ID}}/stream",
+        "options": {
+          "headers": {
+            "Authorization": "Bearer {{$node['Set Config'].json['cloudflareApiKey']}}"
+          },
+          "body": {
+            "file": "/tmp/output/{{$node['Generate Music'].json['id']}}_watermarked.mp4"
+          }
+        }
+      },
+      "name": "Upload to Cloudflare Stream",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [1780, 300]
+    },
+    {
+      "parameters": {
+        "to": "{{$env.NOTIFICATION_EMAIL}}",
+        "subject": "Video Creation Complete",
+        "text": "Your video with ID {{$node['Generate Music'].json['id']}} has been created and uploaded to Cloudflare Stream: {{$node['Upload to Cloudflare Stream'].json['url']}}"
+      },
+      "name": "Send Notification",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [2000, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Set Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Config": {
+      "main": [
+        [
+          {
+            "node": "Generate Music",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Generate Visual",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Generate Lyrics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Music": {
+      "main": [
+        [
+          {
+            "node": "Wait for Music",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for Music": {
+      "main": [
+        [
+          {
+            "node": "Download Music",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Music": {
+      "main": [
+        [
+          {
+            "node": "Render Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Visual": {
+      "main": [
+        [
+          {
+            "node": "Download Visual",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Visual": {
+      "main": [
+        [
+          {
+            "node": "Render Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Lyrics": {
+      "main": [
+        [
+          {
+            "node": "Render Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Render Video": {
+      "main": [
+        [
+          {
+            "node": "Add Watermark",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Watermark": {
+      "main": [
+        [
+          {
+            "node": "Upload to Cloudflare Stream",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload to Cloudflare Stream": {
+      "main": [
+        [
+          {
+            "node": "Send Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

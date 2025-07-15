@@ -1,6 +1,7 @@
 {
   "name": "northflank-deployment",
   "version": "1.0.0",
+  "type": "module",
   "description": "Northflank deployment automation for shirt-video-maker",
   "scripts": {
     "deploy": "node scripts/deploy.js",
